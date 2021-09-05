@@ -39,8 +39,6 @@ class Signup(APIView):
         password = request.data.get("password")
         confirm_password = request.data.get("confirm_password")
 
-        print(request.data)
-        print(email, phone_number, user_id, password, confirm_password)
         if (
             not email
             or not phone_number
@@ -85,7 +83,6 @@ class LoginUser(APIView):
         user = User.objects.get(email=request.data["email"])
 
         new_token, created = Token.objects.get_or_create(user=user)
-        print(new_token)
         if new_token:
             response = {"token": str(new_token), "user": Userserializer(user).data}
             return Response(response, status=status.HTTP_201_CREATED)

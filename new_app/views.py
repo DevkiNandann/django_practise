@@ -8,25 +8,6 @@ from new_app.serializers import Userserializer
 from django.utils import timezone
 
 
-class UserDetail(APIView):
-
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get(self, request):
-        users = User.objects.all()
-        resp = Userserializer(users, many=True)
-        return Response(resp.data)
-
-    def post(self, request):
-        data = request.data
-        data["date_created"] = timezone.now()
-        serializer = Userserializer(data=data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status.HTTP_201_CREATED)
-        return Response(serializer.errors, status.HTTP_400_BAD_REQUEST)
-
-
 class Signup(APIView):
     """
     API for new user to sign up

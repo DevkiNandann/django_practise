@@ -10,7 +10,6 @@ from django.utils.translation import gettext as _
 from new_app import helpers
 from django.shortcuts import render
 from django.core.mail import send_mail
-from new_project.settings import SENDING_EMAIL
 
 
 class Signup(APIView):
@@ -202,7 +201,7 @@ class ForgotPasswordEmail(APIView):
             send_mail(
                 "Change your password",
                 f"Please click on {url} to change your password",
-                SENDING_EMAIL,
+                "devki.gupta@unthikable.co",
                 [email],
             )
             return Response(

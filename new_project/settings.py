@@ -11,17 +11,21 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
 import os
-from re import LOCALE
+import dotenv
+
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+dotenv_file = os.path.join(BASE_DIR, ".env")
+if os.path.isfile(dotenv_file):
+    dotenv.load_dotenv(dotenv_file)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "6(&a@xvgo+45a23&aio0-5e6^rhqv65&0u#%zcflf26$-lfr0y"
+SECRET_KEY = os.environ.get("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -139,8 +143,9 @@ EMAIL_HOST = "smtp.sendgrid.net"
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = "apikey"
-SENDGRID_API_KEY = (
-    "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"
-)
+SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY")
 EMAIL_HOST_PASSWORD = SENDGRID_API_KEY
-SENDING_EMAIL = "devki@mailinator.com"
+
+TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID")
+TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN")
+TWILIO_NUMBER = os.environ.get("TWILIO_NUMBER")

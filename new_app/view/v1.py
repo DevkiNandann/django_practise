@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from new_app.models.user import User
 from rest_framework.views import APIView
-from new_app.serializers import Userserializer
+from new_app.serializers import Userserializer_v1
 from django.utils import timezone
 from django.utils.translation import gettext as _
 
@@ -62,7 +62,7 @@ class Signup(APIView):
         return Response(
             data={
                 _("message"): _("user created successfully"),
-                _("user"): Userserializer(request.data).data,
+                _("user"): Userserializer_v1(request.data).data,
             },
             status=status.HTTP_201_CREATED,
         )
@@ -80,12 +80,13 @@ class LoginUser(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        user = User.objects.get(email=request.data["email"])
-        if not user:
+        user = User.objects.filter(email=request.data["email"])
+        if not user.count() > 0:
             return Response(
                 data={_("error"): _("The user with this email does not exist")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        user = user.first()
         if not check_password(request.data["password"], user.password):
             return Response(
                 data={_("error"): _("Either the email or password is incorrect")},
@@ -96,7 +97,7 @@ class LoginUser(APIView):
         if new_token:
             response = {
                 _("token"): str(new_token),
-                _("user"): Userserializer(user).data,
+                _("user"): Userserializer_v1(user).data,
             }
             user.last_login = timezone.now()
             user.save()
@@ -120,7 +121,7 @@ class LogoutUser(APIView):
         )
 
 
-class ChangePaswordUser(APIView):
+class ChangePasswordUser(APIView):
     """
     API for user to change password
     """
@@ -162,3 +163,16 @@ class ChangePaswordUser(APIView):
                 data={_("message"): _("Password changed successfully")},
                 status=status.HTTP_200_OK,
             )
+
+
+class UserProfile(APIView):
+    """
+    API to get user profile
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = User.objects.get(phone_number=request.user)
+        serializer = Userserializer_v1(user).data
+        return Response(data=serializer, status=status.HTTP_200_OK)

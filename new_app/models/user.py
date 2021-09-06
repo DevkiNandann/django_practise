@@ -13,6 +13,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     date_created = models.DateTimeField(blank=True, null=True)
     is_superuser = models.BooleanField(default=False)
     last_login = models.DateTimeField(blank=True, null=True)
+    address = models.CharField(blank=True, null=True, max_length=255)
 
     USERNAME_FIELD = "phone_number"
     REQUIRED_FIELDS = ["email"]

@@ -1,4 +1,5 @@
 db.sqlite3
-new_app.migrations
+new_app/migrations
 __pycache__
+migration_scripts/
 

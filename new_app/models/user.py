@@ -17,3 +17,9 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     USERNAME_FIELD = "phone_number"
     REQUIRED_FIELDS = ["email"]
+
+
+class Otp(models.Model):
+    phone_number = models.CharField(max_length=255, unique=True, blank=True)
+    otp = models.CharField(max_length=4)
+    date_created = models.DateTimeField()

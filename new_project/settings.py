@@ -133,3 +133,14 @@ LOCALE_PATHS = (os.path.join(BASE_DIR, "locale"),)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATIC_URL = "/static/"
+
+
+EMAIL_HOST = "smtp.sendgrid.net"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = "apikey"
+SENDGRID_API_KEY = (
+    "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"
+)
+EMAIL_HOST_PASSWORD = SENDGRID_API_KEY
+SENDING_EMAIL = "devki@mailinator.com"

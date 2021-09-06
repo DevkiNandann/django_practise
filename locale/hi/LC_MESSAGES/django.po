@@ -1,0 +1,90 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2021-09-06 11:11+0530\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: new_app/views.py:32 new_app/views.py:38 new_app/views.py:44
+#: new_app/views.py:50 new_app/views.py:79 new_app/views.py:86
+#: new_app/views.py:91 new_app/views.py:138 new_app/views.py:144
+#: new_app/views.py:151
+msgid "error"
+msgstr "त्रुटि"
+
+#: new_app/views.py:32 new_app/views.py:79
+msgid "Please enter all required fields"
+msgstr "कृपया सभी आवश्यक फ़ील्ड दर्ज करें"
+
+#: new_app/views.py:38
+msgid "This email already exist"
+msgstr "यह ईमेल पहले से मौजूद है"
+
+#: new_app/views.py:44
+msgid "This phone number already exist"
+msgstr "यह फ़ोन नंबर पहले से मौजूद है"
+
+#: new_app/views.py:50
+msgid "Password and confirm password does not match"
+msgstr "पासवर्ड और पुष्टिकरण पासवर्ड मेल नहीं खाता"
+
+#: new_app/views.py:64 new_app/views.py:116 new_app/views.py:160
+msgid "message"
+msgstr "संदेश"
+
+#: new_app/views.py:64
+msgid "user created successfully"
+msgstr "उपयोगकर्ता सफलतापूर्वक बनाया गया"
+
+#: new_app/views.py:65 new_app/views.py:99
+msgid "user"
+msgstr "उपयोगकर्ता"
+
+#: new_app/views.py:86
+msgid "The user with this email does not exist"
+msgstr "इस ईमेल वाला उपयोगकर्ता मौजूद नहीं है"
+
+#: new_app/views.py:91
+#, fuzzy
+#| msgid "Old password entered is incorrect"
+msgid "Either the email or password is incorrect"
+msgstr "दर्ज किया गया पुराना पासवर्ड गलत है"
+
+#: new_app/views.py:98
+msgid "token"
+msgstr "टोकन"
+
+#: new_app/views.py:116
+#, fuzzy
+#| msgid "user created successfully"
+msgid "User log out successfully"
+msgstr "उपयोगकर्ता सफलतापूर्वक बनाया गया"
+
+#: new_app/views.py:138
+msgid "All the parameters are not given"
+msgstr "सभी पैरामीटर नहीं दिए गए हैं"
+
+#: new_app/views.py:144
+msgid "Old password entered is incorrect"
+msgstr "दर्ज किया गया पुराना पासवर्ड गलत है"
+
+#: new_app/views.py:152
+msgid "New password and confirm new password does not match"
+msgstr "नया पासवर्ड और पुष्टिकरण नया पासवर्ड मेल नहीं खाता"
+
+#: new_app/views.py:160
+msgid "Password changed successfully"
+msgstr "पासवर्ड सफलतापूर्वक बदला गया"

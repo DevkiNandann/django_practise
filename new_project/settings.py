@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
 import os
+from re import LOCALE
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -45,14 +46,15 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "new_app",
     "rest_framework",
+    "new_app",
     "rest_framework.authtoken",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -87,7 +89,7 @@ WSGI_APPLICATION = "new_project.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "new_project_db",
+        "NAME": "new_project_new_db",
         "USER": "admin",
         "PASSWORD": "password",
         "HOST": "localhost",
@@ -121,6 +123,10 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
+
+LANGUAGES = [("en", "english"), ("hi", "hindi")]
+
+LOCALE_PATHS = (os.path.join(BASE_DIR, "locale"),)
 
 
 # Static files (CSS, JavaScript, Images)

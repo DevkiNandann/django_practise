@@ -6,6 +6,7 @@ from new_app.models.user import User
 from rest_framework.views import APIView
 from new_app.serializers import Userserializer
 from django.utils import timezone
+from django.utils.translation import gettext as _
 
 
 class Signup(APIView):
@@ -28,13 +29,25 @@ class Signup(APIView):
             or not confirm_password
         ):
             return Response(
-                data={"error": "Please enter all required fields"},
+                data={_("error"): _("Please enter all required fields")},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if User.objects.filter(email=email).count() > 0:
+            return Response(
+                data={_("error"): _("This email already exist")},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if User.objects.filter(phone_number=phone_number).count() > 0:
+            return Response(
+                data={_("error"): _("This phone number already exist")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         if password != confirm_password:
             return Response(
-                data={"error": "Password and confirm password does not match"},
+                data={_("error"): _("Password and confirm password does not match")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -48,8 +61,8 @@ class Signup(APIView):
         )
         return Response(
             data={
-                "message": "user created successfully",
-                "user": Userserializer(request.data).data,
+                _("message"): _("user created successfully"),
+                _("user"): Userserializer(request.data).data,
             },
             status=status.HTTP_201_CREATED,
         )
@@ -61,11 +74,32 @@ class LoginUser(APIView):
     """
 
     def post(self, request):
+        if not request.data.get("email") or not request.data.get("password"):
+            return Response(
+                data={_("error"): _("Please enter all required fields")},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         user = User.objects.get(email=request.data["email"])
+        if not user:
+            return Response(
+                data={_("error"): _("The user with this email does not exist")},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not check_password(request.data["password"], user.password):
+            return Response(
+                data={_("error"): _("Either the email or password is incorrect")},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         new_token, created = Token.objects.get_or_create(user=user)
         if new_token:
-            response = {"token": str(new_token), "user": Userserializer(user).data}
+            response = {
+                _("token"): str(new_token),
+                _("user"): Userserializer(user).data,
+            }
+            user.last_login = timezone.now()
+            user.save()
             return Response(response, status=status.HTTP_201_CREATED)
 
         return Response(request.data, status=status.HTTP_400_BAD_REQUEST)
@@ -80,7 +114,10 @@ class LogoutUser(APIView):
 
     def post(self, request):
         request.user.auth_token.delete()
-        return Response(status=status.HTTP_200_OK)
+        return Response(
+            data={_("message"): _("User log out successfully")},
+            status=status.HTTP_200_OK,
+        )
 
 
 class ChangePaswordUser(APIView):
@@ -100,26 +137,28 @@ class ChangePaswordUser(APIView):
             if not password or not new_password or not confirm_new_password:
                 return Response(
                     status=status.HTTP_400_BAD_REQUEST,
-                    data={"error": "All the parameters are not given"},
+                    data={_("error"): _("All the parameters are not given")},
                 )
 
             if not check_password(password, user.password):
                 return Response(
                     status=status.HTTP_400_BAD_REQUEST,
-                    data={"error": "Old password entered is incorrect"},
+                    data={_("error"): _("Old password entered is incorrect")},
                 )
 
             if new_password != confirm_new_password:
                 return Response(
                     status=status.HTTP_400_BAD_REQUEST,
                     data={
-                        "error": "New password and confirm new password does not match"
+                        _("error"): _(
+                            "New password and confirm new password does not match"
+                        )
                     },
                 )
 
             user.password = make_password(new_password)
             user.save()
             return Response(
-                data={"message": "Password changed successfully"},
+                data={_("message"): _("Password changed successfully")},
                 status=status.HTTP_200_OK,
             )

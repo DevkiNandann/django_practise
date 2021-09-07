@@ -1,3 +1,4 @@
+import os
 from django.contrib.auth.hashers import make_password, check_password
 from django.core.exceptions import ValidationError
 from rest_framework import permissions, status
@@ -40,11 +41,11 @@ class Signup(APIView):
         password = serializer.validated_data["password"]
 
         # make password hash and create the user
-        password_to_set = make_password(password)
+        password_hash = make_password(password)
         User.objects.create(
             email=email,
             phone_number=phone_number,
-            password=password_to_set,
+            password=password_hash,
             date_created=timezone.now(),
         )
 
@@ -82,7 +83,7 @@ class LoginUser(APIView):
         # check if password entered is correct
         if not check_password(password, user.password):
             return Response(
-                data={_("error"): _("Either the email or password is incorrect")},
+                data={_("error"): _("Incorrect Password")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -159,8 +160,13 @@ class UserProfile(APIView):
 
     def get(self, request):
         user = User.objects.get(phone_number=request.user)
-        serializer = UserSerializerV1(user).data
-        return Response(data=serializer, status=status.HTTP_200_OK)
+        if user:
+            serializer = UserSerializerV1(user).data
+            return Response(data=serializer, status=status.HTTP_200_OK)
+
+        return Response(
+            data={_("error"): _("User not found")}, status=status.HTTP_400_BAD_REQUEST
+        )
 
 
 class ForgotPasswordEmail(APIView):
@@ -183,12 +189,13 @@ class ForgotPasswordEmail(APIView):
 
             # creating a local url for now
             url = f"{BASE_URL}/redirect_email/{user}"
+            sender = os.environ.get("SEND_FROM")
 
             # send the mail to user
             send_mail(
                 "Change your password",
                 f"Please click on {url} to change your password",
-                "devki.gupta@unthikable.co",
+                sender,
                 [email],
             )
             return Response(
@@ -275,12 +282,6 @@ class ValidateOtp(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if not phone_number or not country_code:
-            return Response(
-                data={_("error"): _("Please enter phone numberand country_code")},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
         send_to = "+" + country_code + phone_number
 
         # if the otp entered exists for the entered phone number render it to
@@ -291,6 +292,12 @@ class ValidateOtp(APIView):
             if user_qs.exists():
                 user_id = user_qs.first().user_id
                 return render(request, "change_password.html", {"user_id": user_id})
+
+            else:
+                return Response(
+                    data={_("error"): _("No user assosciated with the phone number")},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
         else:
             return Response(

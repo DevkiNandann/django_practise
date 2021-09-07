@@ -19,14 +19,10 @@ urlpatterns = [
         name="forgot_password_otp",
     ),
     path("validate_otp", views.ValidateOtp.as_view(), name="validate_otp"),
+    path("reset_password", views.ResetPassword.as_view(), name="reset_password"),
     path(
-        "change_password_on_forget",
-        views.ChangePasswordonForgot.as_view(),
-        name="change_password_on_forget",
-    ),
-    path(
-        "reset_password/<str:user_id>",
-        views.ResetPassword.as_view(),
-        name="reset_password",
+        "redirect_email/<int:user_id>",
+        views.RedirectEmail.as_view(),
+        name="redirect_email",
     ),
 ]

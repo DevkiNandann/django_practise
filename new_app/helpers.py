@@ -4,9 +4,7 @@ from new_project.settings import TWILIO_AUTH_TOKEN, TWILIO_ACCOUNT_SID, TWILIO_N
 
 
 def generate_otp() -> str:
-    otp = ""
-    for _ in range(4):
-        otp += str(random.randint(0, 9))
+    otp = str(random.randint(1000, 9999))
     return otp
 
 

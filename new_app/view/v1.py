@@ -1,15 +1,27 @@
 from django.contrib.auth.hashers import make_password, check_password
+from django.core.exceptions import ValidationError
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
+from rest_framework.serializers import Serializer
 from new_app.models.user import User, Otp
 from rest_framework.views import APIView
-from new_app.serializers import Userserializer_v1
+from new_app.serializers import (
+    UserSerializerV1,
+    LoginUserSerializer,
+    ForgotPasswordEmailSerializer,
+    ForgotPasswordOtpSerializer,
+    ChangePasswordUserSerializer,
+    SignupSerializer,
+    ValidateOtpSerializer,
+    ResetPasswordSerializer,
+)
 from django.utils import timezone
 from django.utils.translation import gettext as _
 from new_app import helpers
 from django.shortcuts import render
 from django.core.mail import send_mail
+from new_project.settings import BASE_URL
 
 
 class Signup(APIView):
@@ -18,59 +30,28 @@ class Signup(APIView):
     """
 
     def post(self, request):
-        email = request.data.get("email")
-        phone_number = request.data.get("phone_number")
-        user_id = request.data.get("user_id")
-        password = request.data.get("password")
-        confirm_password = request.data.get("confirm_password")
 
-        # check for required fields
-        if (
-            not email
-            or not phone_number
-            or not user_id
-            or not password
-            or not confirm_password
-        ):
-            return Response(
-                data={_("error"): _("Please enter all required fields")},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        serializer = SignupSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        # check for uniqueness of email
-        if User.objects.filter(email=email).count() > 0:
-            return Response(
-                data={_("error"): _("This email already exist")},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        # check for uniqueness of phone_number
-        if User.objects.filter(phone_number=phone_number).count() > 0:
-            return Response(
-                data={_("error"): _("This phone number already exist")},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        # check for password and confirm password do match
-        if password != confirm_password:
-            return Response(
-                data={_("error"): _("Password and confirm password does not match")},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        email = serializer.validated_data["email"]
+        phone_number = serializer.validated_data["phone_number"]
+        password = serializer.validated_data["password"]
 
         # make password hash and create the user
         password_to_set = make_password(password)
         User.objects.create(
-            user_id=user_id,
             email=email,
             phone_number=phone_number,
             password=password_to_set,
             date_created=timezone.now(),
         )
+
         return Response(
             data={
                 _("message"): _("user created successfully"),
-                _("user"): Userserializer_v1(request.data).data,
+                _("user"): UserSerializerV1(request.data).data,
             },
             status=status.HTTP_201_CREATED,
         )
@@ -82,23 +63,24 @@ class LoginUser(APIView):
     """
 
     def post(self, request):
-        if not request.data.get("email") or not request.data.get("password"):
-            return Response(
-                data={_("error"): _("Please enter all required fields")},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        serializer = LoginUserSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        email = serializer.validated_data["email"]
+        password = serializer.validated_data["password"]
 
         # check for email existence in db
-        user = User.objects.filter(email=request.data["email"])
-        if not user.count() > 0:
+        user_qs = User.objects.filter(email=email)
+        if not user_qs.exists():
             return Response(
                 data={_("error"): _("The user with this email does not exist")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        user = user.first()
+        user = user_qs.first()
 
         # check if password entered is correct
-        if not check_password(request.data["password"], user.password):
+        if not check_password(password, user.password):
             return Response(
                 data={_("error"): _("Either the email or password is incorrect")},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -107,12 +89,12 @@ class LoginUser(APIView):
         # creating a new token or getting it if already exists for a user
         new_token, created = Token.objects.get_or_create(user=user)
         if new_token:
-            response = {
-                _("token"): str(new_token),
-                _("user"): Userserializer_v1(user).data,
-            }
             user.last_login = timezone.now()
             user.save()
+            response = {
+                _("token"): str(new_token),
+                _("user"): UserSerializerV1(user).data,
+            }
             return Response(response, status=status.HTTP_201_CREATED)
 
         return Response(request.data, status=status.HTTP_400_BAD_REQUEST)
@@ -143,33 +125,20 @@ class ChangePasswordUser(APIView):
     def post(self, request):
         user = User.objects.get(phone_number=request.user)
         if user:
-            new_password = request.data.get("new_password")
-            confirm_new_password = request.data.get("confirm_new_password")
-            password = request.data.get("old_password")
-
-            # check for required fields
-            if not password or not new_password or not confirm_new_password:
+            serializer = ChangePasswordUserSerializer(data=request.data)
+            if not serializer.is_valid():
                 return Response(
-                    status=status.HTTP_400_BAD_REQUEST,
-                    data={_("error"): _("All the parameters are not given")},
+                    data=serializer.errors, status=status.HTTP_400_BAD_REQUEST
                 )
 
+            new_password = serializer.validated_data["new_password"]
+            old_password = serializer.validated_data["old_password"]
+
             # check if old passwor entered is correct
-            if not check_password(password, user.password):
+            if not check_password(old_password, user.password):
                 return Response(
                     status=status.HTTP_400_BAD_REQUEST,
                     data={_("error"): _("Old password entered is incorrect")},
-                )
-
-            # check if New password and confirm new password match
-            if new_password != confirm_new_password:
-                return Response(
-                    status=status.HTTP_400_BAD_REQUEST,
-                    data={
-                        _("error"): _(
-                            "New password and confirm new password does not match"
-                        )
-                    },
                 )
 
             # make new password hash and save it
@@ -190,7 +159,7 @@ class UserProfile(APIView):
 
     def get(self, request):
         user = User.objects.get(phone_number=request.user)
-        serializer = Userserializer_v1(user).data
+        serializer = UserSerializerV1(user).data
         return Response(data=serializer, status=status.HTTP_200_OK)
 
 
@@ -200,22 +169,20 @@ class ForgotPasswordEmail(APIView):
     """
 
     def post(self, request):
-        data = request.data
-        email = data.get("email")
 
-        if not email:
-            return Response(
-                data={_("error"): _("Please enter all required fields")},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        serializer = ForgotPasswordEmailSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        email = serializer.validated_data["email"]
 
         # check for existence of user
-        user = User.objects.filter(email=email)
-        if user.count() > 0:
-            user = user.first().user_id
+        user_qs = User.objects.filter(email=email)
+        if user_qs.exists():
+            user = user_qs.first().user_id
 
             # creating a local url for now
-            url = f"localhost:8000/reset_password/{user}"
+            url = f"{BASE_URL}/redirect_email/{user}"
 
             # send the mail to user
             send_mail(
@@ -242,25 +209,23 @@ class ForgotPasswordOtp(APIView):
     """
 
     def post(self, request):
-        data = request.data
-        phone_number = data.get("phone_number")
-        country_code = data.get("country_code")
-        otp = helpers.generate_otp()
 
-        if not phone_number and not country_code:
-            return Response(
-                data={_("error"): _("Please enter all required fields")},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        serializer = ForgotPasswordOtpSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        phone_number = serializer.validated_data["phone_number"]
+        country_code = serializer.validated_data["country_code"]
+        otp = helpers.generate_otp()
 
         # creating a client
         client = helpers.MessageClient()
         send_to = "+" + country_code + phone_number
 
         # if otp is already present with the number then update the otp
-        existing_otp = Otp.objects.filter(phone_number=send_to)
-        if existing_otp.count() > 0:
-            existing_otp = existing_otp.first()
+        existing_otp_qs = Otp.objects.filter(phone_number=send_to)
+        if existing_otp_qs.exists():
+            existing_otp = existing_otp_qs.first()
 
             # send the otp with a gap of 1 minute
             if (timezone.now() - existing_otp.date_created).seconds < 60:
@@ -294,9 +259,14 @@ class ValidateOtp(APIView):
     """
 
     def post(self, request):
-        otp = request.data.get("otp")
-        phone_number = request.data.get("phone_number")
-        country_code = request.data.get("country_code")
+
+        serializer = ValidateOtpSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        otp = serializer.validated_data["otp"]
+        phone_number = serializer.validated_data["phone_number"]
+        country_code = serializer.validated_data["country_code"]
 
         # checking if the otp is present and is of required length 4
         if not otp or len(otp) != 4:
@@ -316,10 +286,10 @@ class ValidateOtp(APIView):
         # if the otp entered exists for the entered phone number render it to
         # the change password page else throw an error
         otp = Otp.objects.filter(otp=otp, phone_number=send_to)
-        if otp.count() == 1:
-            user = User.objects.filter(phone_number=phone_number)
-            if user.count() > 0:
-                user_id = user.first().user_id
+        if otp.exists():
+            user_qs = User.objects.filter(phone_number=phone_number)
+            if user_qs.exists():
+                user_id = user_qs.first().user_id
                 return render(request, "change_password.html", {"user_id": user_id})
 
         else:
@@ -329,7 +299,7 @@ class ValidateOtp(APIView):
             )
 
 
-class ChangePasswordonForgot(APIView):
+class ResetPassword(APIView):
     """
     API to change the user password in db
     """
@@ -337,22 +307,19 @@ class ChangePasswordonForgot(APIView):
     def post(self, request):
 
         # fetching the details from html form
-        new_password = request.POST.get("new_password")
-        confirm_new_password = request.POST.get("confirm_new_password")
-        user_id = request.POST.get("user_id")
+        serializer = ResetPasswordSerializer(data=request.POST)
+        if not serializer.is_valid():
+            errors = []
+
+            for key, value in serializer.errors.items():
+                errors.append({key: value})
+
+            return render(request, "change_password.html", {"errors": errors})
+
+        new_password = serializer.validated_data["new_password"]
+        user_id = serializer.validated_data["user_id"]
 
         user = User.objects.get(user_id=user_id)
-        errors = []
-
-        # applying checks for required fields
-        if not new_password or not confirm_new_password:
-            errors.append("All the parameters are not given")
-
-        if new_password != confirm_new_password:
-            errors.append("New password and confirm new password does not match")
-
-        if errors:
-            return render(request, "change_password.html", {"errors": errors})
 
         user.password = make_password(new_password)
         user.save()
@@ -362,10 +329,10 @@ class ChangePasswordonForgot(APIView):
         )
 
 
-class ResetPassword(APIView):
+class RedirectEmail(APIView):
     """
     API to render the link sent on email to chnage password page
     """
 
-    def get(self, request, user_id: str):
+    def get(self, request, user_id: int):
         return render(request, "change_password.html", {"user_id": user_id})

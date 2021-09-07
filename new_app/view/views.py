@@ -1,4 +1,3 @@
-from django.views import generic
 from . import v1
 from . import v2
 from rest_framework import generics
@@ -68,15 +67,15 @@ class ValidateOtp(generics.GenericAPIView):
         return view(request, *args, **kwargs)
 
 
-class ChangePasswordonForgot(generics.GenericAPIView):
-    def dispatch(self, request, *args, **kwargs):
-
-        view = v1.ChangePasswordonForgot.as_view()
-        return view(request, *args, **kwargs)
-
-
 class ResetPassword(generics.GenericAPIView):
     def dispatch(self, request, *args, **kwargs):
 
         view = v1.ResetPassword.as_view()
+        return view(request, *args, **kwargs)
+
+
+class RedirectEmail(generics.GenericAPIView):
+    def dispatch(self, request, *args, **kwargs):
+
+        view = v1.RedirectEmail.as_view()
         return view(request, *args, **kwargs)

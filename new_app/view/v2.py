@@ -22,6 +22,7 @@ class Signup(APIView):
         confirm_password = request.data.get("confirm_password")
         address = request.data.get("address")
 
+        # check for required fields
         if (
             not email
             or not phone_number
@@ -35,24 +36,28 @@ class Signup(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # check for uniqueness of email
         if User.objects.filter(email=email).count() > 0:
             return Response(
                 data={_("error"): _("This email already exist")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # check for uniqueness of phone_number
         if User.objects.filter(phone_number=phone_number).count() > 0:
             return Response(
                 data={_("error"): _("This phone number already exist")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # check for password and confirm password do match
         if password != confirm_password:
             return Response(
                 data={_("error"): _("Password and confirm password does not match")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # make password hash and create the user
         password_to_set = make_password(password)
         User.objects.create(
             user_id=user_id,

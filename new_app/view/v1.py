@@ -24,6 +24,7 @@ class Signup(APIView):
         password = request.data.get("password")
         confirm_password = request.data.get("confirm_password")
 
+        # check for required fields
         if (
             not email
             or not phone_number
@@ -36,24 +37,28 @@ class Signup(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # check for uniqueness of email
         if User.objects.filter(email=email).count() > 0:
             return Response(
                 data={_("error"): _("This email already exist")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # check for uniqueness of phone_number
         if User.objects.filter(phone_number=phone_number).count() > 0:
             return Response(
                 data={_("error"): _("This phone number already exist")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # check for password and confirm password do match
         if password != confirm_password:
             return Response(
                 data={_("error"): _("Password and confirm password does not match")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # make password hash and create the user
         password_to_set = make_password(password)
         User.objects.create(
             user_id=user_id,
@@ -83,6 +88,7 @@ class LoginUser(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # check for email existence in db
         user = User.objects.filter(email=request.data["email"])
         if not user.count() > 0:
             return Response(
@@ -90,12 +96,15 @@ class LoginUser(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         user = user.first()
+
+        # check if password entered is correct
         if not check_password(request.data["password"], user.password):
             return Response(
                 data={_("error"): _("Either the email or password is incorrect")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # creating a new token or getting it if already exists for a user
         new_token, created = Token.objects.get_or_create(user=user)
         if new_token:
             response = {
@@ -138,18 +147,21 @@ class ChangePasswordUser(APIView):
             confirm_new_password = request.data.get("confirm_new_password")
             password = request.data.get("old_password")
 
+            # check for required fields
             if not password or not new_password or not confirm_new_password:
                 return Response(
                     status=status.HTTP_400_BAD_REQUEST,
                     data={_("error"): _("All the parameters are not given")},
                 )
 
+            # check if old passwor entered is correct
             if not check_password(password, user.password):
                 return Response(
                     status=status.HTTP_400_BAD_REQUEST,
                     data={_("error"): _("Old password entered is incorrect")},
                 )
 
+            # check if New password and confirm new password match
             if new_password != confirm_new_password:
                 return Response(
                     status=status.HTTP_400_BAD_REQUEST,
@@ -160,6 +172,7 @@ class ChangePasswordUser(APIView):
                     },
                 )
 
+            # make new password hash and save it
             user.password = make_password(new_password)
             user.save()
             return Response(
@@ -182,6 +195,10 @@ class UserProfile(APIView):
 
 
 class ForgotPasswordEmail(APIView):
+    """
+    API to send reset link on forgot password through email using sendgrid
+    """
+
     def post(self, request):
         data = request.data
         email = data.get("email")
@@ -192,12 +209,15 @@ class ForgotPasswordEmail(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # check for existence of user
         user = User.objects.filter(email=email)
         if user.count() > 0:
             user = user.first().user_id
 
+            # creating a local url for now
             url = f"localhost:8000/reset_password/{user}"
 
+            # send the mail to user
             send_mail(
                 "Change your password",
                 f"Please click on {url} to change your password",
@@ -217,6 +237,10 @@ class ForgotPasswordEmail(APIView):
 
 
 class ForgotPasswordOtp(APIView):
+    """
+    API to send the otp on forogt password using twilio
+    """
+
     def post(self, request):
         data = request.data
         phone_number = data.get("phone_number")
@@ -229,12 +253,16 @@ class ForgotPasswordOtp(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # creating a client
         client = helpers.MessageClient()
         send_to = "+" + country_code + phone_number
 
+        # if otp is already present with the number then update the otp
         existing_otp = Otp.objects.filter(phone_number=send_to)
         if existing_otp.count() > 0:
             existing_otp = existing_otp.first()
+
+            # send the otp with a gap of 1 minute
             if (timezone.now() - existing_otp.date_created).seconds < 60:
                 return Response(
                     data={_("error"): _("Please try after one minute")},
@@ -269,6 +297,8 @@ class ValidateOtp(APIView):
         otp = request.data.get("otp")
         phone_number = request.data.get("phone_number")
         country_code = request.data.get("country_code")
+
+        # checking if the otp is present and is of required length 4
         if not otp or len(otp) != 4:
             return Response(
                 data={_("error"): _("Please enter a valid 4 digit otp")},
@@ -282,6 +312,9 @@ class ValidateOtp(APIView):
             )
 
         send_to = "+" + country_code + phone_number
+
+        # if the otp entered exists for the entered phone number render it to
+        # the change password page else throw an error
         otp = Otp.objects.filter(otp=otp, phone_number=send_to)
         if otp.count() == 1:
             user = User.objects.filter(phone_number=phone_number)
@@ -297,14 +330,21 @@ class ValidateOtp(APIView):
 
 
 class ChangePasswordonForgot(APIView):
+    """
+    API to change the user password in db
+    """
+
     def post(self, request):
 
+        # fetching the details from html form
         new_password = request.POST.get("new_password")
         confirm_new_password = request.POST.get("confirm_new_password")
         user_id = request.POST.get("user_id")
 
         user = User.objects.get(user_id=user_id)
         errors = []
+
+        # applying checks for required fields
         if not new_password or not confirm_new_password:
             errors.append("All the parameters are not given")
 
@@ -323,5 +363,9 @@ class ChangePasswordonForgot(APIView):
 
 
 class ResetPassword(APIView):
-    def get(self, request, user_id):
+    """
+    API to render the link sent on email to chnage password page
+    """
+
+    def get(self, request, user_id: str):
         return render(request, "change_password.html", {"user_id": user_id})

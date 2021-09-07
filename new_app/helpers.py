@@ -1,10 +1,9 @@
-import os
 from twilio.rest import Client
 import random
 from new_project.settings import TWILIO_AUTH_TOKEN, TWILIO_ACCOUNT_SID, TWILIO_NUMBER
 
 
-def generate_otp():
+def generate_otp() -> str:
     otp = ""
     for _ in range(4):
         otp += str(random.randint(0, 9))
@@ -12,6 +11,10 @@ def generate_otp():
 
 
 class MessageClient:
+    """
+    Messgae client to send the otp
+    """
+
     def __init__(self):
 
         self.twilio_number = str(TWILIO_NUMBER)

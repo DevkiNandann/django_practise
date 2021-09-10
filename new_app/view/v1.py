@@ -160,6 +160,7 @@ class UserProfile(APIView):
 
     def get(self, request):
         user = User.objects.get(phone_number=request.user)
+        # print("")
         if user:
             serializer = UserSerializerV1(user).data
             return Response(data=serializer, status=status.HTTP_200_OK)

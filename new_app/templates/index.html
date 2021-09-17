@@ -1,3 +1,5 @@
+{% load static %}
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -9,6 +11,7 @@
         integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
 
     {% block title %}
+    <link rel="stylesheet" href="{% static 'assets/css/login.css' %}">
     <title>Home</title>
     {% endblock title %}
 </head>
@@ -29,9 +32,25 @@
             </div>
         </div>
     </nav>
+    <div class="livestream_section">
+        <h4>Go live and checkout new filters</h4>
+        <form action = "livestream" method = "post">
+            <div class="form-group">
+                <label for="exampleFormControlSelect1">Select Filter</label>
+                <select class="form-control" id="exampleFormControlSelect1" name="filter_type" required>
+                  <option value="edge_detection">Edge Detection</option>
+                  <option value="blur">Blur</option>
+                  <option value="lens">Lens filter</option>
+                  <option value="cat">Cat filter</option>
+                  <option value="dog">Dog filter</option>
+                </select>
+              </div>
+            {% csrf_token %}
 
-    <div>
-        <h2>Welcome to app</h2>
+            <button type="submit" class="btn btn-primary">Go Live</button>
+            <h6>To stop the streaming, please enter "q"</h6>
+        <form>
+
     </div>
     {% endblock content %}
 </body>

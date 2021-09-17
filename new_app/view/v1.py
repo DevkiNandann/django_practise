@@ -64,7 +64,9 @@ class LoginUser(APIView):
     """
 
     def post(self, request):
-        serializer = LoginUserSerializer(data=request.data)
+        # data = request.data
+        data = request.POST
+        serializer = LoginUserSerializer(data=data)
         if not serializer.is_valid():
             return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -92,13 +94,19 @@ class LoginUser(APIView):
         if new_token:
             user.last_login = timezone.now()
             user.save()
-            response = {
-                _("token"): str(new_token),
-                _("user"): UserSerializerV1(user).data,
-            }
-            return Response(response, status=status.HTTP_201_CREATED)
 
-        return Response(request.data, status=status.HTTP_400_BAD_REQUEST)
+            # response = {
+            #     _("token"): str(new_token),
+            #     _("user"): UserSerializerV1(user).data,
+            # }
+            # return Response(response, status=status.HTTP_201_CREATED)
+            return render(request, "index.html")
+
+        # return Response(request.data, status=status.HTTP_400_BAD_REQUEST)
+        return render(request, "login.html", {"errors": "400 Bad Request"})
+
+    def get(self, request):
+        return render(request, "login.html")
 
 
 class LogoutUser(APIView):
@@ -160,7 +168,6 @@ class UserProfile(APIView):
 
     def get(self, request):
         user = User.objects.get(phone_number=request.user)
-        # print("")
         if user:
             serializer = UserSerializerV1(user).data
             return Response(data=serializer, status=status.HTTP_200_OK)

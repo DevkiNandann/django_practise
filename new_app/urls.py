@@ -3,9 +3,11 @@ from new_app.view import views
 
 
 urlpatterns = [
+    path("", views.LoginUser.as_view(), name=""),
     path("login", views.LoginUser.as_view(), name="login"),
     path("logout", views.LogoutUser.as_view(), name="logout"),
     path("signup", views.Signup.as_view(), name="signup"),
+    path("livestream", views.LiveStream.as_view(), name="livestream"),
     path("change_password", views.ChangePasswordUser.as_view(), name="change_password"),
     path("user_profile", views.UserProfile.as_view(), name="user_profile"),
     path(

@@ -1,4 +1,5 @@
 import os
+import cv2
 from django.contrib.auth.hashers import make_password, check_password
 from django.core.exceptions import ValidationError
 from rest_framework import permissions, status
@@ -23,6 +24,7 @@ from new_app import helpers
 from django.shortcuts import render
 from django.core.mail import send_mail
 from new_project.settings import BASE_URL
+from new_app.helpers import filter_helper, resize_frame
 
 
 class Signup(APIView):
@@ -351,3 +353,38 @@ class RedirectEmail(APIView):
 
     def get(self, request, user_id: int):
         return render(request, "change_password.html", {"user_id": user_id})
+
+
+class LiveStream(APIView):
+    """
+    API for user to change filter in live video
+    """
+
+    def post(self, request):
+        filter_type = request.POST.get("filter_type")
+        # use a hardcode video
+        # cap = cv2.VideoCapture("data/video.mp4")
+
+        # for webcam
+        cap = cv2.VideoCapture(0)
+
+        # set width height brightness for the webcam window
+        cap.set(3, 1920)  # id 3 is width
+        cap.set(4, 1080)  # id 4 is height
+        cap.set(10, 100)  # id 10 is brightness
+
+        while cap.isOpened():
+            try:
+                success, img = cap.read()
+                if not success:
+                    return render(request, "index.html", {"errors": "Failure in reading video"})
+                img = resize_frame(img, scale=80)
+                # apply filter
+                img = filter_helper(img, filter_type)
+                cv2.imshow('Video', img)
+                if cv2.waitKey(10) == ord('q'):
+                    cap.release()
+                    cv2.destroyAllWindows()
+                    return render(request, "index.html")
+            except Exception as e:
+                return render(request, "index.html", {"errors": e})

@@ -4,7 +4,7 @@ import random
 from twilio.rest import Client
 from new_project.settings import TWILIO_AUTH_TOKEN, TWILIO_ACCOUNT_SID, TWILIO_NUMBER
 from collections import Counter
-
+from math import hypot
 
 def generate_otp() -> str:
     otp = str(random.randint(1000, 9999))
@@ -178,3 +178,57 @@ class BackgroundColorDetector():
             return list(self.number_counter[0][0])
         else:
             return self.average_colour()
+
+
+def eye_filter(filter, image, shape):
+    # eyes filter
+    eye_left = (shape.part(37).x, shape.part(37).y)
+    eye_right = (shape.part(46).x, shape.part(46).y)
+    eye_mid = (shape.part(28).x, shape.part(28).y)
+
+    eye_width = int(hypot(eye_left[0] - eye_right[0], eye_left[1] - eye_right[1]) * 2)
+    eye_height = int(eye_width * 0.7)
+
+    top_left = (int(eye_mid[0] - eye_width / 2), int(eye_mid[1] - eye_height / 2))
+
+    eye = cv2.resize(filter, (eye_width, eye_height))
+
+    eye_gray = cv2.cvtColor(eye, cv2.COLOR_BGR2GRAY)
+    _, eye_mask = cv2.threshold(eye_gray, 25, 255, cv2.THRESH_BINARY_INV)
+
+    eye_area = image[top_left[1]: top_left[1] + eye_height,
+                top_left[0]: top_left[0] + eye_width]
+
+    no_eye_area = cv2.bitwise_and(eye_area, eye_area, mask=eye_mask)
+
+    image[top_left[1]: top_left[1] + eye_height,
+                top_left[0]: top_left[0] + eye_width] = cv2.add(no_eye_area, eye)
+
+    return image
+
+
+def nose_filter(filter, image, shape):
+    center_nose = (shape.part(30).x, shape.part(30).y)
+    left_nose = shape.part(32).x, shape.part(32).y
+    right_nose = shape.part(36).x, shape.part(36).y
+
+    nose_width = int(hypot(left_nose[0] - right_nose[0],
+                    left_nose[1] - right_nose[1]))
+    nose_height = int(nose_width * 0.77)
+
+    # New nose position
+    top_left = (int(center_nose[0] - nose_width / 2),
+                        int(center_nose[1] - nose_height / 2))
+
+    nose_pig = cv2.resize(filter, (nose_width, nose_height))
+    nose_pig_gray = cv2.cvtColor(nose_pig, cv2.COLOR_BGR2GRAY)
+    _, nose_mask = cv2.threshold(nose_pig_gray, 25, 255, cv2.THRESH_BINARY_INV)
+
+    nose_area = image[top_left[1]: top_left[1] + nose_height,
+                top_left[0]: top_left[0] + nose_width]
+
+    nose_area_no_nose = cv2.bitwise_and(nose_area, nose_area, mask=nose_mask)
+    final_nose = cv2.add(nose_area_no_nose, nose_pig)
+    image[top_left[1]: top_left[1] + nose_height,
+                top_left[0]: top_left[0] + nose_width] = final_nose
+    return image

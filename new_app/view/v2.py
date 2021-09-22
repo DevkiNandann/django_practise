@@ -79,9 +79,6 @@ class LiveStream(APIView):
         if filter_type in ("nose", ("eye_and_nose")):
             nose_image = cv2.imread("data/pig_nose.png")
 
-        # use a hardcode video
-        # cap = cv2.VideoCapture("data/video.mp4")
-
         # for webcam
         cap = cv2.VideoCapture(0)
 
@@ -97,7 +94,9 @@ class LiveStream(APIView):
             try:
                 success, image = cap.read()
                 if not success:
-                    return render(request, "index.html", {"errors": "Failure in reading video"})
+                    return render(
+                        request, "index.html", {"errors": "Failure in reading video"}
+                    )
 
                 # apply filter
                 image = imutils.resize(image, width=500)
@@ -114,8 +113,8 @@ class LiveStream(APIView):
                     if eyes_image is not None:
                         image = eye_filter(eyes_image, image, shape)
 
-                cv2.imshow('Video', image)
-                if cv2.waitKey(10) == ord('q'):
+                cv2.imshow("Video", image)
+                if cv2.waitKey(10) == ord("q"):
                     cap.release()
                     cv2.destroyAllWindows()
                     return render(request, "index.html")

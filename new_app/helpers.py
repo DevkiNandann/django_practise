@@ -6,6 +6,7 @@ from new_project.settings import TWILIO_AUTH_TOKEN, TWILIO_ACCOUNT_SID, TWILIO_N
 from collections import Counter
 from math import hypot
 
+
 def generate_otp() -> str:
     otp = str(random.randint(1000, 9999))
     return otp
@@ -29,11 +30,9 @@ def filter_helper(image, type):
     if type == "edge_detection":
         img_canny = cv2.Canny(image, 100, 100)
         return img_canny
-
     elif type == "blur":
         img_blur = cv2.GaussianBlur(image, (15, 15), 0)
         return img_blur
-
     else:
         return apply_effects(image, type)
 
@@ -95,10 +94,12 @@ def apply_effects(img, effect):
 
         # filter_img size in relation to face by scaling
         filter_img_width = int(1 * face_w)
-        filter_img_height = int(filter_img_width * original_filter_img_h / original_filter_img_w)
+        filter_img_height = int(
+            filter_img_width * original_filter_img_h / original_filter_img_w
+        )
 
         # setting location of coordinates of filter_img
-        filter_img_x1 = face_x2 - int(face_w/2) - int(filter_img_width/2)
+        filter_img_x1 = face_x2 - int(face_w / 2) - int(filter_img_width / 2)
         filter_img_x2 = filter_img_x1 + filter_img_width
         filter_img_y1 = face_y1
         filter_img_y2 = filter_img_y1 + filter_img_height
@@ -118,11 +119,23 @@ def apply_effects(img, effect):
         filter_img_height = filter_img_y2 - filter_img_y1
 
         # resize filter_img to fit on face
-        filter_img = cv2.resize(filter_img, (filter_img_width,filter_img_height), interpolation=cv2.INTER_AREA)
-        mask = cv2.resize(original_mask, (filter_img_width,filter_img_height), interpolation=cv2.INTER_AREA)
-        mask_inv = cv2.resize(original_mask_inv, (filter_img_width,filter_img_height), interpolation=cv2.INTER_AREA)
+        filter_img = cv2.resize(
+            filter_img,
+            (filter_img_width, filter_img_height),
+            interpolation=cv2.INTER_AREA,
+        )
+        mask = cv2.resize(
+            original_mask,
+            (filter_img_width, filter_img_height),
+            interpolation=cv2.INTER_AREA,
+        )
+        mask_inv = cv2.resize(
+            original_mask_inv,
+            (filter_img_width, filter_img_height),
+            interpolation=cv2.INTER_AREA,
+        )
 
-        #take ROI for filter_img from background that is equal to size of filter_img image
+        # take ROI for filter_img from background that is equal to size of filter_img image
         roi = img[filter_img_y1:filter_img_y2, filter_img_x1:filter_img_x2]
 
         # original image in background (bg) where filter_img is not present
@@ -135,12 +148,16 @@ def apply_effects(img, effect):
         return img
 
 
-class BackgroundColorDetector():
+class BackgroundColorDetector:
+    """
+    This is to detect the background color of a image
+    """
+
     def __init__(self, imageLoc):
         self.img = cv2.imread(imageLoc, 1)
         self.manual_count = {}
         self.w, self.h, self.channels = self.img.shape
-        self.total_pixels = self.w*self.h
+        self.total_pixels = self.w * self.h
 
     def count(self):
         for y in range(0, self.h):
@@ -172,8 +189,7 @@ class BackgroundColorDetector():
 
     def detect(self):
         self.twenty_most_common()
-        self.percentage_of_first = (
-            float(self.number_counter[0][1])/self.total_pixels)
+        self.percentage_of_first = float(self.number_counter[0][1]) / self.total_pixels
         if self.percentage_of_first > 0.5:
             return list(self.number_counter[0][0])
         else:
@@ -196,13 +212,15 @@ def eye_filter(filter, image, shape):
     eye_gray = cv2.cvtColor(eye, cv2.COLOR_BGR2GRAY)
     _, eye_mask = cv2.threshold(eye_gray, 25, 255, cv2.THRESH_BINARY_INV)
 
-    eye_area = image[top_left[1]: top_left[1] + eye_height,
-                top_left[0]: top_left[0] + eye_width]
+    eye_area = image[
+        top_left[1] : top_left[1] + eye_height, top_left[0] : top_left[0] + eye_width
+    ]
 
     no_eye_area = cv2.bitwise_and(eye_area, eye_area, mask=eye_mask)
 
-    image[top_left[1]: top_left[1] + eye_height,
-                top_left[0]: top_left[0] + eye_width] = cv2.add(no_eye_area, eye)
+    image[
+        top_left[1] : top_left[1] + eye_height, top_left[0] : top_left[0] + eye_width
+    ] = cv2.add(no_eye_area, eye)
 
     return image
 
@@ -212,23 +230,26 @@ def nose_filter(filter, image, shape):
     left_nose = shape.part(32).x, shape.part(32).y
     right_nose = shape.part(36).x, shape.part(36).y
 
-    nose_width = int(hypot(left_nose[0] - right_nose[0],
-                    left_nose[1] - right_nose[1]))
+    nose_width = int(hypot(left_nose[0] - right_nose[0], left_nose[1] - right_nose[1]))
     nose_height = int(nose_width * 0.77)
 
     # New nose position
-    top_left = (int(center_nose[0] - nose_width / 2),
-                        int(center_nose[1] - nose_height / 2))
+    top_left = (
+        int(center_nose[0] - nose_width / 2),
+        int(center_nose[1] - nose_height / 2),
+    )
 
     nose_pig = cv2.resize(filter, (nose_width, nose_height))
     nose_pig_gray = cv2.cvtColor(nose_pig, cv2.COLOR_BGR2GRAY)
     _, nose_mask = cv2.threshold(nose_pig_gray, 25, 255, cv2.THRESH_BINARY_INV)
 
-    nose_area = image[top_left[1]: top_left[1] + nose_height,
-                top_left[0]: top_left[0] + nose_width]
+    nose_area = image[
+        top_left[1] : top_left[1] + nose_height, top_left[0] : top_left[0] + nose_width
+    ]
 
     nose_area_no_nose = cv2.bitwise_and(nose_area, nose_area, mask=nose_mask)
     final_nose = cv2.add(nose_area_no_nose, nose_pig)
-    image[top_left[1]: top_left[1] + nose_height,
-                top_left[0]: top_left[0] + nose_width] = final_nose
+    image[
+        top_left[1] : top_left[1] + nose_height, top_left[0] : top_left[0] + nose_width
+    ] = final_nose
     return image

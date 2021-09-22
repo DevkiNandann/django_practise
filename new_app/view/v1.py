@@ -66,7 +66,6 @@ class LoginUser(APIView):
     """
 
     def post(self, request):
-        # data = request.data
         data = request.POST
         serializer = LoginUserSerializer(data=data)
         if not serializer.is_valid():
@@ -97,14 +96,8 @@ class LoginUser(APIView):
             user.last_login = timezone.now()
             user.save()
 
-            # response = {
-            #     _("token"): str(new_token),
-            #     _("user"): UserSerializerV1(user).data,
-            # }
-            # return Response(response, status=status.HTTP_201_CREATED)
             return render(request, "index.html")
 
-        # return Response(request.data, status=status.HTTP_400_BAD_REQUEST)
         return render(request, "login.html", {"errors": "400 Bad Request"})
 
     def get(self, request):
@@ -362,8 +355,6 @@ class LiveStream(APIView):
 
     def post(self, request):
         filter_type = request.POST.get("filter_type")
-        # use a hardcode video
-        # cap = cv2.VideoCapture("data/video.mp4")
 
         # for webcam
         cap = cv2.VideoCapture(0)

@@ -19,7 +19,7 @@ from new_app.serializers import (
 )
 from django.utils import timezone
 from django.utils.translation import gettext as _
-from new_app import helpers
+from new_app.helpers import generate_otp, MessageClient, save_model
 from django.shortcuts import render
 from django.core.mail import send_mail
 from new_project.settings import BASE_URL
@@ -42,12 +42,13 @@ class Signup(APIView):
 
         # make password hash and create the user
         password_hash = make_password(password)
-        User.objects.create(
+        user = User(
             email=email,
             phone_number=phone_number,
             password=password_hash,
             date_created=timezone.now(),
         )
+        save_model(user)
 
         return Response(
             data={
@@ -72,7 +73,7 @@ class LoginUser(APIView):
         password = serializer.validated_data["password"]
 
         # check for email existence in db
-        user_qs = User.objects.filter(email=email)
+        user_qs = User.objects.using("default").filter(email=email)
         if not user_qs.exists():
             return Response(
                 data={_("error"): _("The user with this email does not exist")},
@@ -144,7 +145,7 @@ class ChangePasswordUser(APIView):
 
             # make new password hash and save it
             user.password = make_password(new_password)
-            user.save()
+            save_model(user)
             return Response(
                 data={_("message"): _("Password changed successfully")},
                 status=status.HTTP_200_OK,
@@ -160,7 +161,6 @@ class UserProfile(APIView):
 
     def get(self, request):
         user = User.objects.get(phone_number=request.user)
-        # print("")
         if user:
             serializer = UserSerializerV1(user).data
             return Response(data=serializer, status=status.HTTP_200_OK)
@@ -224,10 +224,10 @@ class ForgotPasswordOtp(APIView):
 
         phone_number = serializer.validated_data["phone_number"]
         country_code = serializer.validated_data["country_code"]
-        otp = helpers.generate_otp()
+        otp = generate_otp()
 
         # creating a client
-        client = helpers.MessageClient()
+        client = MessageClient()
         send_to = "+" + country_code + phone_number
 
         # if otp is already present with the number then update the otp
@@ -244,7 +244,7 @@ class ForgotPasswordOtp(APIView):
             else:
                 existing_otp.otp = otp
                 existing_otp.date_created = timezone.now()
-                existing_otp.save()
+                save_model(existing_otp)
                 client.send_message(otp, send_to)
 
                 return Response(
@@ -330,7 +330,7 @@ class ResetPassword(APIView):
         user = User.objects.get(user_id=user_id)
 
         user.password = make_password(new_password)
-        user.save()
+        save_model(user)
         return Response(
             data={_("message"): _("Password changed successfully")},
             status=status.HTTP_200_OK,

@@ -232,7 +232,6 @@ def nose_filter(filter, image, shape):
 
     nose_width = int(hypot(left_nose[0] - right_nose[0], left_nose[1] - right_nose[1]))
     nose_height = int(nose_width * 0.77)
-
     # New nose position
     top_left = (
         int(center_nose[0] - nose_width / 2),
@@ -252,4 +251,37 @@ def nose_filter(filter, image, shape):
     image[
         top_left[1] : top_left[1] + nose_height, top_left[0] : top_left[0] + nose_width
     ] = final_nose
+    return image
+
+
+def full_face_filter(filter, image, shape):
+    left = (shape.part(2).x, shape.part(2).y)
+    right = (shape.part(16).x, shape.part(16).y)
+    top = (shape.part(28).x, shape.part(28).y)
+    bottom = (shape.part(34).x, shape.part(34).y)
+
+    height = int(hypot(bottom[0] - top[0], bottom[1] - top[1]))
+    face_height = int(3 * height)
+    face_width = int(hypot(left[0] - right[0], left[1] - right[1]))
+
+    cv2.rectangle(
+        image, (right[0], bottom[1] - face_height), (left[0], bottom[1]), (0, 255, 0), 2
+    )
+
+    new_filter = cv2.resize(filter, (face_width, face_height))
+    center = (shape.part(30).x, shape.part(30).y)
+    top_left = int(center[0] - face_width / 2), int(bottom[1] - face_height)
+    cv2.circle(image, top_left, 3, (255, 0, 0), -1)
+    filter_gray = cv2.cvtColor(new_filter, cv2.COLOR_BGR2GRAY)
+    _, mask = cv2.threshold(filter_gray, 25, 255, cv2.THRESH_BINARY_INV)
+
+    area = image[
+        top_left[1] : top_left[1] + face_height, top_left[0] : top_left[0] + face_width
+    ]
+
+    no_filter_area = cv2.bitwise_and(area, area, mask=mask)
+    final_img = cv2.add(no_filter_area, new_filter)
+    image[
+        top_left[1] : top_left[1] + face_height, top_left[0] : top_left[0] + face_width
+    ] = final_img
     return image

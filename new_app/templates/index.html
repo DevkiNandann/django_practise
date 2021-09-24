@@ -34,20 +34,21 @@
     </nav>
     <div class="livestream_section">
         <h4>Go live and checkout new filters</h4>
-        <form action = "livestream" method = "post">
+        <form action="live_stream" method="post">
             <div class="form-group">
                 <label for="filter_type">Select Filter</label>
                 <select class="form-control" id="filter_type" name="filter_type" required>
-                  <option value="eye">Eyes</option>
-                  <option value="nose">Nose</option>
-                  <option value="eye_and_nose">Both</option>
+                    <option value="eye">Eyes</option>
+                    <option value="nose">Nose</option>
+                    <option value="eye_and_nose">Both</option>
+                    <option value="face">Face</option>
                 </select>
-              </div>
+            </div>
             {% csrf_token %}
 
             <button type="submit" class="btn btn-primary">Go Live</button>
             <h6>To stop the streaming, please enter "q"</h6>
-        <form>
+            <form>
 
     </div>
     {% endblock content %}

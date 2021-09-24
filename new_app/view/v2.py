@@ -11,7 +11,7 @@ from rest_framework.views import APIView
 from new_app.serializers import SignupSerializer, UserSerializerV2
 from django.utils import timezone
 from django.utils.translation import gettext as _
-from new_app.helpers import eye_filter, nose_filter, ear_filter
+from new_app.helpers import eye_filter, full_face_filter, nose_filter
 
 
 class Signup(APIView):
@@ -73,12 +73,16 @@ class LiveStream(APIView):
     def post(self, request):
         eyes_image = None
         nose_image = None
+        face_image = None
+
         filter_type = request.POST.get("filter_type")
+
+        if filter_type == "face":
+            face_image = cv2.imread("data/dog2.png")
         if filter_type in ("eye", "eye_and_nose"):
             eyes_image = cv2.imread("data/google.png")
         if filter_type in ("nose", ("eye_and_nose")):
             nose_image = cv2.imread("data/pig_nose.png")
-
         # for webcam
         cap = cv2.VideoCapture(0)
 
@@ -108,6 +112,8 @@ class LiveStream(APIView):
                 # loop over the face detections
                 for (i, rect) in enumerate(rects):
                     shape = predictor(gray, rect)
+                    if face_image is not None:
+                        image = full_face_filter(face_image, image, shape)
                     if nose_image is not None:
                         image = nose_filter(nose_image, image, shape)
                     if eyes_image is not None:

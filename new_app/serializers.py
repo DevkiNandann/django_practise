@@ -147,3 +147,24 @@ class ResetPasswordSerializer(serializers.Serializer):
             )
 
         return attrs
+
+
+class EditProfileSerializer(serializers.Serializer):
+    """
+    Serailizer for edit profile API
+    """
+
+    password = serializers.CharField(required=True, max_length=255)
+    confirm_password = serializers.CharField(required=True, max_length=255)
+    address = serializers.CharField(max_length=255)
+
+    def validate(self, attrs):
+        password = attrs.get("password")
+        confirm_password = attrs.get("confirm_password")
+
+        if password != confirm_password:
+            raise serializers.ValidationError(
+                "New password and confirm new password does not match"
+            )
+
+        return attrs

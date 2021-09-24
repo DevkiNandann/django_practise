@@ -25,4 +25,9 @@ urlpatterns = [
         views.RedirectEmail.as_view(),
         name="redirect_email",
     ),
+    path(
+        "edit_profile",
+        views.EditUserProfile.as_view(),
+        name="edit_profile",
+    ),
 ]

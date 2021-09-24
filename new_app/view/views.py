@@ -79,3 +79,10 @@ class RedirectEmail(generics.GenericAPIView):
 
         view = v1.RedirectEmail.as_view()
         return view(request, *args, **kwargs)
+
+
+class EditUserProfile(generics.GenericAPIView):
+    def dispatch(self, request, *args, **kwargs):
+
+        view = v2.EditUserProfile.as_view()
+        return view(request, *args, **kwargs)

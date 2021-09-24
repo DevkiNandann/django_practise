@@ -98,7 +98,15 @@ DATABASES = {
         "PASSWORD": "password",
         "HOST": "localhost",
         "PORT": "5432",
-    }
+    },
+    "user_db": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "user_db",
+        "USER": "admin",
+        "PASSWORD": "password",
+        "HOST": "localhost",
+        "PORT": "5432",
+    },
 }
 
 
@@ -150,3 +158,6 @@ TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID")
 TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN")
 TWILIO_NUMBER = os.environ.get("TWILIO_NUMBER")
 BASE_URL = "localhost:8000"
+DATABASE_ROUTERS = [
+    "new_app.helpers.DataBaseConfiguration",
+]

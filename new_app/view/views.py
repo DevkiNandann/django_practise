@@ -79,3 +79,37 @@ class RedirectEmail(generics.GenericAPIView):
 
         view = v1.RedirectEmail.as_view()
         return view(request, *args, **kwargs)
+
+class CreateCheckoutSession(generics.GenericAPIView):
+    def dispatch(self, request, *args, **kwargs):
+
+        view = v2.CreateCheckoutSession.as_view()
+        return view(request, *args, **kwargs)
+
+
+class CheckoutSuccess(generics.GenericAPIView):
+    def dispatch(self, request, *args, **kwargs):
+        print("displatch")
+        view = v2.SuccessView.as_view()
+        return view(request, *args, **kwargs)
+
+
+class CheckoutCancel(generics.GenericAPIView):
+    def dispatch(self, request, *args, **kwargs):
+
+        view = v2.CancelView.as_view()
+        return view(request, *args, **kwargs)
+
+
+class CreateProduct(generics.GenericAPIView):
+    def dispatch(self, request, *args, **kwargs):
+
+        view = v2.CreateProduct.as_view()
+        return view(request, *args, **kwargs)
+
+
+class SellProduct(generics.GenericAPIView):
+    def dispatch(self, request, *args, **kwargs):
+
+        view = v2.SellProduct.as_view()
+        return view(request, *args, **kwargs)

@@ -131,26 +131,34 @@ class CreateCheckoutSession(APIView):
     def post(self, request, id):
         stripe.api_key = settings.STRIPE_SECRET_KEY
 
-        product = Product.objects.get(id=id)
-        checkout_session = stripe.checkout.Session.create(
-            line_items=[
-                {
-                    "price_data": {
-                        "currency": "usd",
-                        "unit_amount": product.price,
-                        "product_data": {
-                            "name": product.name,
+        try:
+            product = Product.objects.get(id=id)
+            checkout_session = stripe.checkout.Session.create(
+                line_items=[
+                    {
+                        "price_data": {
+                            "currency": "usd",
+                            "unit_amount": product.price,
+                            "product_data": {
+                                "name": product.name,
+                            },
                         },
+                        "quantity": 1,
                     },
-                    "quantity": 1,
-                },
-            ],
-            payment_method_types=[
-                "card",
-            ],
-            mode="payment",
-            success_url=settings.BASE_URL + "checkout_success",
-            cancel_url=settings.BASE_URL + "checkout_cancel",
-        )
+                ],
+                payment_method_types=[
+                    "card",
+                ],
+                mode="payment",
+                success_url=settings.BASE_URL + "checkout_success",
+                cancel_url=settings.BASE_URL + "checkout_cancel",
+            )
 
-        return redirect(checkout_session.url, code=302)
+        except Exception as e:
+            return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
+
+        response = {
+            "session_url": checkout_session.url,
+            "message": "Checkout successfully. Please click the link below",
+        }
+        return Response(response, status.HTTP_200_OK)

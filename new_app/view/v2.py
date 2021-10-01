@@ -13,7 +13,8 @@ from new_app.serializers import (
 )
 from django.utils import timezone
 from django.utils.translation import gettext as _
-from django.shortcuts import redirect, render
+from django.shortcuts import render
+from django.core.mail import send_mail
 
 
 class Signup(APIView):
@@ -120,7 +121,7 @@ class SellProduct(APIView):
 
     def get(self, request, id):
         product = Product.objects.get(id=id)
-        return render(request, "checkout_page.html", {"product": product})
+        return render(request, "checkout.html", {"product": product})
 
 
 class CreateCheckoutSession(APIView):
@@ -149,6 +150,7 @@ class CreateCheckoutSession(APIView):
                 payment_method_types=[
                     "card",
                 ],
+                metadata={"product_id": product.id},
                 mode="payment",
                 success_url=settings.BASE_URL + "checkout_success",
                 cancel_url=settings.BASE_URL + "checkout_cancel",
@@ -162,3 +164,89 @@ class CreateCheckoutSession(APIView):
             "message": "Checkout successfully. Please click the link below",
         }
         return Response(response, status.HTTP_200_OK)
+
+
+class WebhookView(APIView):
+    """
+    Event handler
+    """
+
+    def post(self, request):
+        payload = request.body
+        sig_header = request.META["HTTP_STRIPE_SIGNATURE"]
+        event = None
+
+        try:
+            event = stripe.Webhook.construct_event(
+                payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
+            )
+
+        except ValueError as e:
+            return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
+
+        except stripe.error.SignatureVerificationError as e:
+            return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
+
+        if event["type"] == "checkout.session.completed":
+            session = event["data"]["object"]
+
+            customer_email = session["customer_details"]["email"]
+            product_id = session["metadata"]["product_id"]
+
+            product = Product.objects.get(id=product_id)
+
+            send_mail(
+                "Here is your product",
+                f"Thanks for your purchase. Here is the product you ordered. Your product is {product.name}",
+                "devki.gupta@unthinkable.co",
+                [
+                    customer_email,
+                ],
+            )
+
+        return Response(payload, status=status.HTTP_200_OK)
+
+
+class CreatePayment(APIView):
+    """
+    APi to create the payment
+    """
+
+    def post(self, request, id):
+        stripe.api_key = settings.STRIPE_SECRET_KEY
+        data = request.data
+        product = Product.objects.get(id=id)
+
+        # Create or use a preexisting Customer to associate with the payment
+        customer = stripe.Customer.create(
+            email=settings.TEST_EMAIL,
+            description="vacation",
+            name="XYZ",
+            address={
+                "city": "x",
+                "country": "AF",
+                "line1": "x",
+                "line2": "x",
+                "postal_code": "90210",
+                "state": "x",
+            },
+        )
+
+        intent = stripe.PaymentIntent.create(
+            amount=product.price,
+            currency="usd",
+            customer=customer["id"],
+            metadata={"product_id": product.id},
+            description="vacation",
+        )
+        try:
+            return Response(
+                {
+                    "publicKey": settings.STRIPE_PUBLISHABLE_KEY,
+                    "clientSecret": intent.client_secret,
+                    "id": intent.id,
+                },
+                status=status.HTTP_200_OK,
+            )
+        except Exception as e:
+            return Response({"error": e}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

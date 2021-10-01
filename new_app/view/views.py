@@ -80,6 +80,7 @@ class RedirectEmail(generics.GenericAPIView):
         view = v1.RedirectEmail.as_view()
         return view(request, *args, **kwargs)
 
+
 class CreateCheckoutSession(generics.GenericAPIView):
     def dispatch(self, request, *args, **kwargs):
 
@@ -119,4 +120,18 @@ class SellProduct(generics.GenericAPIView):
     def dispatch(self, request, *args, **kwargs):
 
         view = v2.SellProduct.as_view()
+        return view(request, *args, **kwargs)
+
+
+class WebhookView(generics.GenericAPIView):
+    def dispatch(self, request, *args, **kwargs):
+
+        view = v2.WebhookView.as_view()
+        return view(request, *args, **kwargs)
+
+
+class CreatePayment(generics.GenericAPIView):
+    def dispatch(self, request, *args, **kwargs):
+
+        view = v2.CreatePayment.as_view()
         return view(request, *args, **kwargs)

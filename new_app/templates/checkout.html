@@ -1,0 +1,208 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <title>Stripe Sample</title>
+    <meta name="description" content="A demo of Stripe Payment Intents" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="{% static 'assets/css/normalize.css' %}">
+    <link rel="stylesheet" href="{% static 'assets/css/global.css' %}">
+    <script src="https://js.stripe.com/v3/"></script>
+
+</head>
+
+<body>
+    <div class="sr-root">
+        <div class="sr-main">
+            <header class="sr-header">
+                <div class="sr-header__logo"></div>
+            </header>
+            <div class="sr-payment-summary payment-view">
+                <h1 class="order-amount">${{ product.price }}</h1>
+                <h4>Purchase a {{ product.name }}</h4>
+            </div>
+            <div class="sr-payment-form payment-view">
+                <div class="sr-form-row">
+                    <label for="card-element">
+                        Payment details
+                    </label>
+                    <div class="sr-combo-inputs">
+                        <div class="sr-combo-inputs-row">
+                            <input type="text" id="name" placeholder="Name" autocomplete="cardholder"
+                                class="sr-input" />
+                        </div>
+                        <div class="sr-combo-inputs-row">
+                            <div class="sr-input sr-card-element" id="card-element"></div>
+                        </div>
+                    </div>
+                    <div class="sr-field-error" id="card-errors" role="alert"></div>
+                    <div class="sr-form-row">
+                        <label class="sr-checkbox-label"><input type="checkbox" id="save-card"><span
+                                class="sr-checkbox-check"></span> Save card for future payments</label>
+                    </div>
+                </div>
+                <button id="submit">
+                    <div class="spinner hidden" id="spinner"></div><span id="button-text">Pay</span>
+                </button>
+                <div class="sr-legal-text">
+                    Your card will be charge {{ product.price }}<span id="save-card-text"> and your card details will be
+                        saved to
+                        your account</span>.
+                </div>
+            </div>
+            <div class="sr-payment-summary hidden completed-view">
+                <h1>Your payment <span class="status"></span></h1>
+                <h4>
+                    View PaymentIntent response:</a>
+                </h4>
+            </div>
+            <div class="sr-section hidden completed-view">
+                <div class="sr-callout">
+                    <pre>
+
+            </pre>
+                </div>
+                <button onclick="window.location.href = '/';">Restart demo</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var stripe;
+
+        var orderData = {
+            items: [{ id: "photo-subscription" }],
+            currency: "usd"
+        };
+        fetch("/create_payment/1", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(orderData)
+        })
+            .then(function (result) {
+                return result.json();
+            })
+            .then(function (data) {
+                return setupElements(data);
+            })
+            .then(function (stripeData) {
+                document.querySelector("#submit").addEventListener("click", function (evt) {
+                    evt.preventDefault();
+                    // Initiate payment
+                    pay(stripeData.stripe, stripeData.card, stripeData.clientSecret);
+                });
+            });
+
+        // Set up Stripe.js and Elements to use in checkout form
+        var setupElements = function (data) {
+            stripe = Stripe(data.publicKey);
+            var elements = stripe.elements();
+            var style = {
+                base: {
+                    color: "#32325d",
+                    fontFamily: '"Helvetica Neue", Helvetica, sans-serif',
+                    fontSmoothing: "antialiased",
+                    fontSize: "16px",
+                    "::placeholder": {
+                        color: "#aab7c4"
+                    }
+                },
+                invalid: {
+                    color: "#fa755a",
+                    iconColor: "#fa755a"
+                }
+            };
+
+            var card = elements.create("card", { style: style });
+            card.mount("#card-element");
+
+            return {
+                stripe: stripe,
+                card: card,
+                clientSecret: data.clientSecret,
+                id: data.id
+            };
+        };
+
+
+        var pay = function (stripe, card, clientSecret) {
+            var cardholderName = document.querySelector("#name").value;
+            var isSavingCard = document.querySelector("#save-card").checked;
+
+            var data = {
+                card: card,
+                billing_details: {}
+            };
+
+            if (cardholderName) {
+                data["billing_details"]["name"] = cardholderName;
+            }
+            console.log(data)
+            changeLoadingState(true);
+
+            // Initiate the payment.
+            // If authentication is required, confirmCardPayment will automatically display a modal
+
+            // Use setup_future_usage to save the card and tell Stripe how you plan to charge it in the future
+            stripe
+                .confirmCardPayment(clientSecret, {
+                    payment_method: data,
+                    setup_future_usage: isSavingCard ? "off_session" : ""
+                })
+                .then(function (result) {
+                    if (result.error) {
+                        changeLoadingState(false);
+                        var errorMsg = document.querySelector(".sr-field-error");
+                        errorMsg.textContent = result.error.message;
+                        console.log(result)
+                    } else {
+                        orderComplete(clientSecret);
+                        // There's a risk the customer will close the browser window before the callback executes
+                        // Fulfill any business critical processes async using a 
+                        // In this sample we use a webhook to listen to payment_intent.succeeded 
+                        // and add the PaymentMethod to a Customer
+                    }
+                });
+        };
+
+        /* ------- Post-payment helpers ------- */
+
+        // Shows a success / error message when the payment is complete
+        var orderComplete = function (clientSecret) {
+            stripe.retrievePaymentIntent(clientSecret).then(function (result) {
+                var paymentIntent = result.paymentIntent;
+                var paymentIntentJson = JSON.stringify(paymentIntent, null, 2);
+                document.querySelectorAll(".payment-view").forEach(function (view) {
+                    view.classList.add("hidden");
+                });
+                document.querySelectorAll(".completed-view").forEach(function (view) {
+                    view.classList.remove("hidden");
+                });
+                document.querySelector(".status").textContent =
+                    paymentIntent.status === "succeeded" ? "succeeded" : "did not complete";
+                document.querySelector("pre").textContent = paymentIntentJson;
+            });
+        };
+
+        // Show a spinner on payment submission
+        var changeLoadingState = function (isLoading) {
+            if (isLoading) {
+                document.querySelector("button").disabled = true;
+                document.querySelector("#spinner").classList.remove("hidden");
+                document.querySelector("#button-text").classList.add("hidden");
+            } else {
+                document.querySelector("button").disabled = false;
+                document.querySelector("#spinner").classList.add("hidden");
+                document.querySelector("#button-text").classList.remove("hidden");
+            }
+        };
+    </script>
+</body>
+
+</html>

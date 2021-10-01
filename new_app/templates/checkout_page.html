@@ -15,41 +15,13 @@
                 <h5>Rs {{ product.price }}</h5>
             </div>
         </div>
-        <button type="button" id="checkout-button">Checkout</button>
+        <form action="/create_checkout_session/{{ product.id }}" method="POST">
+            {% csrf_token %}
+            <button type="submit">Checkout</button>
+          </form>
 
     </section>
-    {% csrf_token %}
 
-    <script type="text/javascript">
-        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-
-        var stripe = Stripe("{{ key }}");
-        console.log(stripe)
-        var checkoutButton = document.getElementById("checkout-button");
-        checkoutButton.addEventListener("click", function () {
-            fetch("{% url 'create_checkout_session' product.id %}", {
-                method: "POST",
-                headers: {
-                    'X-CSRFToken': csrftoken
-                }
-            })
-                .then(function (response) {
-                    return response.json();
-                })
-                .then(function (session) {
-                    return stripe.redirectToCheckout({ sessionId: session.id });
-                })
-                .then(function (result) {
-                    if (result.error) {
-                        alert(result.error.message);
-                    }
-                })
-                .catch(function (error) {
-                    console.error("Error:", error);
-                });
-        });
-
-    </script>
 </body>
 
 </html>

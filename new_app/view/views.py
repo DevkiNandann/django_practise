@@ -89,7 +89,7 @@ class CreateCheckoutSession(generics.GenericAPIView):
 
 class CheckoutSuccess(generics.GenericAPIView):
     def dispatch(self, request, *args, **kwargs):
-        print("displatch")
+
         view = v2.SuccessView.as_view()
         return view(request, *args, **kwargs)
 
@@ -105,6 +105,13 @@ class CreateProduct(generics.GenericAPIView):
     def dispatch(self, request, *args, **kwargs):
 
         view = v2.CreateProduct.as_view()
+        return view(request, *args, **kwargs)
+
+
+class GetProduct(generics.GenericAPIView):
+    def dispatch(self, request, *args, **kwargs):
+
+        view = v2.GetProduct.as_view()
         return view(request, *args, **kwargs)
 
 

@@ -15,6 +15,7 @@ from new_app.view.views import (
     CheckoutCancel,
     CreateProduct,
     SellProduct,
+    GetProduct,
 )
 
 urlpatterns = [
@@ -49,4 +50,5 @@ urlpatterns = [
     path("checkout_cancel", CheckoutCancel.as_view(), name="checkout_cancel"),
     path("create_product", CreateProduct.as_view(), name="create_product"),
     path("sell_product/<int:id>", SellProduct.as_view(), name="sell_product"),
+    path("get_product", GetProduct.as_view(), name="get_product")
 ]

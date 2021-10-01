@@ -103,6 +103,16 @@ class CancelView(APIView):
         return render(request, "cancel.html")
 
 
+class GetProduct(APIView):
+    """
+    API to get all the products available
+    """
+
+    def get(self, request):
+        products = Product.objects.all()
+        return render(request, "all_product.html", {"products": products})
+
+
 class SellProduct(APIView):
     """
     API to sell the product
@@ -110,11 +120,7 @@ class SellProduct(APIView):
 
     def get(self, request, id):
         product = Product.objects.get(id=id)
-        return render(
-            request,
-            "checkout_page.html",
-            {"product": product, "key": settings.STRIPE_PUBLIC_KEY},
-        )
+        return render(request, "checkout_page.html", {"product": product})
 
 
 class CreateCheckoutSession(APIView):
@@ -147,5 +153,4 @@ class CreateCheckoutSession(APIView):
             cancel_url=settings.BASE_URL + "checkout_cancel",
         )
 
-        response = {"session_url": checkout_session.id}
-        return Response(response, status=status.HTTP_200_OK)
+        return redirect(checkout_session.url, code=302)

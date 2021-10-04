@@ -74,16 +74,11 @@
     <script>
         var stripe;
 
-        var orderData = {
-            items: [{ id: "photo-subscription" }],
-            currency: "usd"
-        };
         fetch("/create_payment/1", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify(orderData)
         })
             .then(function (result) {
                 return result.json();
@@ -94,12 +89,10 @@
             .then(function (stripeData) {
                 document.querySelector("#submit").addEventListener("click", function (evt) {
                     evt.preventDefault();
-                    // Initiate payment
                     pay(stripeData.stripe, stripeData.card, stripeData.clientSecret);
                 });
             });
 
-        // Set up Stripe.js and Elements to use in checkout form
         var setupElements = function (data) {
             stripe = Stripe(data.publicKey);
             var elements = stripe.elements();
@@ -130,7 +123,6 @@
             };
         };
 
-
         var pay = function (stripe, card, clientSecret) {
             var cardholderName = document.querySelector("#name").value;
             var isSavingCard = document.querySelector("#save-card").checked;
@@ -143,13 +135,7 @@
             if (cardholderName) {
                 data["billing_details"]["name"] = cardholderName;
             }
-            console.log(data)
             changeLoadingState(true);
-
-            // Initiate the payment.
-            // If authentication is required, confirmCardPayment will automatically display a modal
-
-            // Use setup_future_usage to save the card and tell Stripe how you plan to charge it in the future
             stripe
                 .confirmCardPayment(clientSecret, {
                     payment_method: data,
@@ -160,13 +146,8 @@
                         changeLoadingState(false);
                         var errorMsg = document.querySelector(".sr-field-error");
                         errorMsg.textContent = result.error.message;
-                        console.log(result)
                     } else {
                         orderComplete(clientSecret);
-                        // There's a risk the customer will close the browser window before the callback executes
-                        // Fulfill any business critical processes async using a 
-                        // In this sample we use a webhook to listen to payment_intent.succeeded 
-                        // and add the PaymentMethod to a Customer
                     }
                 });
         };

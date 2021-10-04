@@ -214,7 +214,6 @@ class CreatePayment(APIView):
 
     def post(self, request, id):
         stripe.api_key = settings.STRIPE_SECRET_KEY
-        data = request.data
         product = Product.objects.get(id=id)
 
         # Create or use a preexisting Customer to associate with the payment

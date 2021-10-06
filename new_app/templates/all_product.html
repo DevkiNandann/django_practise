@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Products</title>
+</head>
+<body>
+    <h3 >Click and Checkout a product</h3>
+    <table>
+        <tr>
+            <th>Product Name</th>
+            <th>Product Price</th>
+        </tr>
+        {% for product in products %}
+        <tr>
+            <td><a href="/sell_product/{{ forloop.counter }}">Buy</a></td>
+            <td>{{ product.name }}</td>
+            <td>{{ product.price }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

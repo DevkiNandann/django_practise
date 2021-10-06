@@ -8,10 +8,17 @@ from new_app.view.views import (
     ForgotPasswordEmail,
     ForgotPasswordOtp,
     ValidateOtp,
-    RedirectEmail,
     ResetPassword,
+    RedirectEmail,
+    CreateCheckoutSession,
+    CheckoutSuccess,
+    CheckoutCancel,
+    CreateProduct,
+    SellProduct,
+    GetProduct,
+    WebhookView,
+    CreatePayment,
 )
-
 
 urlpatterns = [
     path("login", LoginUser.as_view(), name="login"),
@@ -36,4 +43,16 @@ urlpatterns = [
         RedirectEmail.as_view(),
         name="redirect_email",
     ),
+    path(
+        "create_checkout_session/<int:id>",
+        CreateCheckoutSession.as_view(),
+        name="create_checkout_session",
+    ),
+    path("checkout_success", CheckoutSuccess.as_view(), name="checkout_success"),
+    path("checkout_cancel", CheckoutCancel.as_view(), name="checkout_cancel"),
+    path("create_product", CreateProduct.as_view(), name="create_product"),
+    path("sell_product/<int:id>", SellProduct.as_view(), name="sell_product"),
+    path("get_product", GetProduct.as_view(), name="get_product"),
+    path("webhook", WebhookView.as_view(), name="webhhok"),
+    path("create_payment/<int:id>", CreatePayment.as_view(), name="create_payment"),
 ]

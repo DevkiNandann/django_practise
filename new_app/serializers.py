@@ -147,3 +147,12 @@ class ResetPasswordSerializer(serializers.Serializer):
             )
 
         return attrs
+
+
+class CreateProductSerializer(serializers.Serializer):
+    """
+    Serializer for creating product
+    """
+
+    name = serializers.CharField(max_length=255)
+    price = serializers.IntegerField()
